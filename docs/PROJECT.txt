@@ -1,0 +1,296 @@
+# Personal Economy Project – Project Definition (v1)
+
+Repo name: personal-economy
+
+---
+
+## 1. Vision
+
+Build a personal economy tool that gives a clear, honest picture of your finances and is realistic to maintain over time.
+
+- Track income and expenses by category.
+- See monthly surplus/deficit and how it evolves.
+- Support weekly / monthly / yearly views (monthly as the default).
+- Later: plug in investment context (high level) and more automation.
+
+Multi‑user from day one (simple email/password login), but designed around **your** workflow first.
+
+---
+
+## 2. v1 Goals (Concrete)
+
+### 2.1 What v1 should do
+
+1. **User Accounts**
+- Email/password signup/login/logout.
+- Password reset flow (via Supabase auth).
+- Each user’s data is isolated.
+
+2. **Data Ingest**
+- Manual upload of CSV / (optionally) PDF statements from:
+- Sparebanken Norge (bank).
+- Curve.
+- Trumf.
+- v1: focus on CSV uploads; PDFs can be an advanced path.
+
+3. **Transaction Storage**
+- Normalize all uploaded transactions into a unified `transactions` table:
+- date, amount, currency
+- merchant / description
+- source (bank/card)
+- category
+- notes
+- user_id
+4. **Summaries & Views**
+- Monthly view (default):
+- total income, total expenses, net (surplus/deficit),
+- spending by category (bar chart / list).
+- Weekly view:
+- weekly spending vs average.
+- Yearly view:
+- monthly totals across a year.
+- Simple text summary for each month (“You spent X, saved Y, top categories were…”).
+
+5. **Configurable Categories**
+- Basic default categories:
+- Housing, Groceries, Eating out, Transport, Subscriptions, Other.
+- User can edit category assignments for specific transactions.
+6. **Future (v2+) hooks**
+- Simple fields for investment context (not full tracking yet):
+- e.g. “total invested”, “monthly contribution”, “target”.
+- Space for:
+- alerts / anomalies (“subscriptions increased by X%”),
+- personal goals (“save X/month”, “runway Y months”).
+
+---
+
+## 3. Data & Privacy
+
+- Data lives in **Supabase Postgres**, under the user’s own Supabase project.
+- No direct bank API scraping in v1:
+- All data enters via **manual uploads** (CSV and possibly PDF).
+- Sensitive secrets (DB URLs, service roles, Supabase keys):
+- stored in `.env.local` for local dev,
+- stored as secrets in GitHub / Cloudflare for deployment.
+
+---
+
+## 4. Tech Stack (v1)
+
+### 4.1 Frontend
+
+- **Framework**: Next.js (latest stable).
+- **Styling**: Tailwind CSS.
+- **Goal**: “Good enough” design that **epsilon** can later refine using `frontend-design`.
+
+Core pages/components:
+- `/auth` (login/register/reset) – or dedicated auth routes as per Supabase/Next integration.
+- `/dashboard`
+- High-level monthly overview (current month by default).
+- Cards: income/expenses/surplus, category breakdown.
+- `/transactions`
+- Table of transactions with filters (date range, category, source).
+- `/upload`
+- CSV upload form (file selector, source type).
+- Display basic stats post-upload.
+
+### 4.2 Backend
+
+- **Backend style**: Fullstack Next.js (no separate backend service initially).
+- Next.js API routes or server actions will:
+- handle CSV uploads,
+- parse/normalize transactions,
+- talk to Supabase.
+- **Auth**: Supabase Auth (email/password).
+- Signup, login, password reset.
+- **Database**: Supabase Postgres.
+
+### 4.3 Storage / Schema (initial idea)
+
+Tables (simplified):
+
+- `users`
+- managed by Supabase auth.
+- each has `id` that we use as foreign key.
+- `accounts`
+- `id`
+- `user_id`
+- `name` (e.g. “Sparebanken Norge Main”)
+- `type` ("bank", "card", "other")
+- `provider` ("sparebanken", "curve", "trumf", etc.)
+
+- `transactions`
+- `id`
+- `user_id`
+- `account_id`
+- `date`
+- `amount` (signed: positive income, negative expense)
+- `currency`
+- `description`
+- `merchant`
+- `category` (string; normalized list)
+- `source_raw` (original source type/filename)
+- `created_at`
+
+- `summaries`
+- `id`
+- `user_id`
+- `period_type` ("month", "week", "year")
+- `period_start` (date)
+- `period_end` (date)
+- `total_income`
+- `total_expenses`
+- `net`
+- `data` (JSONB for category breakdown and extra metrics)
+
+- `settings` (optional)
+- `user_id`
+- `base_currency`
+- `targets` (JSON; e.g. savings goals, runway targets)
+
+### 4.4 Hosting
+
+- **App**: Deployed on **Cloudflare Pages/Workers** (like your other projects).
+- **DB/Auth**: Supabase (Postgres + Auth).
+
+---
+
+## 5. Agent Roles in This Project
+Agents and how they’ll be used once the repo exists:
+
+### main (this agent)
+- Architect the overall system.
+- Maintain docs:
+- `PROJECT.txt` (this file),
+- `PROJECT-ARCHITECTURE.md`,
+- `API-DESIGN.md`.
+- Coordinate which agent does what.
+
+### alpha (project / ops)
+- Turn this project spec into:
+- issues / tasks in the repo,
+- or a Kanban-style file (e.g. `PROJECT-BOARD.md`).
+- Maintain priority and scope.
+- Optionally integrate with a board (GitHub Projects, etc.).
+
+### beta (research / analysis)
+- Design metrics and summary logic:
+- how to compute meaningful monthly/weekly/yearly views,
+- what “good/bad” looks like.
+- Implement or specify:
+- transaction categorization heuristics,
+- anomaly detection ideas for later.
+- Run **on-demand** monthly reviews:
+- e.g. “Generate March 2026 summary report from transactions.”
+
+### gamma (backend / infra)
+- Set up Supabase schema (SQL or migration files).
+- Implement API routes / server functions that:
+- accept CSV uploads,
+- parse and normalize them,
+- insert transactions,
+- compute and store summaries.
+- Wire CI, tests, and basic health checks.
+
+### epsilon (frontend / UI)
+- Build the initial Next.js + Tailwind UI:
+- dashboard page,
+- transactions table,
+- upload page, etc.
+- Later, use `frontend-design` skill to:
+- refine layout and visual hierarchy,
+- create a polished design system.
+### eta (integration / glue)
+- Help gamma with integration:
+- connect frontend to backend endpoints,
+- implement client-side hooks to fetch data.
+- Handle refactors, edge cases, and “make the whole thing hang together”.
+
+---
+
+## 6. Agent Automation & Pipelines
+
+### 6.1 Monthly review
+
+For now: **on-demand** to save tokens.
+
+- User triggers a review (button in UI or manual command).
+
+
+
+- Backend:
+- retrieves last month’s transactions for the user,
+- aggregates to category totals and net,
+- stores summary in `summaries`.
+- beta:
+- optionally generates a textual report:
+- stored in `reports/YYYY-MM.md` in the repo,
+- or in a `summary` field in DB.
+- Later:
+- We may set up an OpenClaw cron job to trigger this monthly.
+- That would cause token usage even without changes, so we delay it until v1 is stable.
+
+### 6.2 Weekly / yearly rollups
+
+- Weekly:
+
+- derived from transactions; useful as a “pulse” view.
+- Yearly:
+- derived from monthly summaries; useful for longer trend.
+
+### 6.3 Output locations
+
+- **In the webapp**:
+- Dashboard panels and charts,
+- Summary text for each period,
+- Possibly a “Reports” section listing previous months.
+
+- **Optional Discord integration** (later):
+- A brief summary message in a channel (e.g. `#personal-economy`):
+- “March 2026: income X, expenses Y, net Z, top categories A/B/C”.
+
+---
+
+## 7. Project Folder Structure (Proposed)
+
+Inside the `personal-economy` repo:
+
+- `/app` or `/src` (depending on Next.js structure)
+- `app/(auth)/...` – auth pages
+- `app/dashboard/...` – main dashboard
+- `app/transactions/...` – transaction table
+- `app/upload/...` – upload flow
+- `components/` – shared UI components
+- `lib/` – helpers (Supabase client, config)
+
+- `/supabase`
+- schema / migrations / seed data
+
+- `/scripts`
+- local tools:
+- CSV parsing,
+- data migration helpers,
+- monthly summary scripts.
+
+- `/docs`
+- `PROJECT.txt` (this file)
+- `PROJECT-ARCHITECTURE.md`
+- `API-DESIGN.md`
+- `DATA-MODEL.md`
+
+- `/reports` (optional, later)
+
+- `2026-03.md`, etc. – human-readable monthly reports.
+
+---
+
+## 8. Next Steps
+
+1. Create a GitHub repo named `personal-economy`.
+2. Add this file as `docs/PROJECT.txt` (or root `PROJECT.txt`).
+3. Grant the `ShadowGBot` GitHub account access (at least read/PR).
+4. With the repo live, we can:
+- have **gamma** scaffold the Next.js + Supabase setup,
+- have **epsilon** create a basic UI,
+- have **beta** define the first monthly summary logic,
+- and iterate from there.
