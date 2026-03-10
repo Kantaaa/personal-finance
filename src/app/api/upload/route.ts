@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { parseCSV, type SourceType } from "@/lib/parsers";
 
+export const runtime = "edge";
+
 export async function POST(request: NextRequest) {
   const supabase = await getSupabaseServerClient();
 

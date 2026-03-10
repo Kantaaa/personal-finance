@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const publicPaths = ["/login", "/register", "/reset-password", "/auth/callback"];
 
-export default async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
