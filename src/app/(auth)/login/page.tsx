@@ -13,6 +13,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/dashboard";
+  const callbackError = searchParams.get("error");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +35,12 @@ function LoginForm() {
 
   return (
     <>
+      {callbackError && (
+        <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {callbackError}
+        </p>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium">

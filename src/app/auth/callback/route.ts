@@ -7,7 +7,15 @@ export const runtime = "edge";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
   const redirect = searchParams.get("redirect") ?? "/dashboard";
+
+  if (error) {
+    const loginUrl = new URL("/login", origin);
+    loginUrl.searchParams.set("error", errorDescription ?? error);
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -28,8 +36,8 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+    if (!sessionError) {
       return NextResponse.redirect(new URL(redirect, origin));
     }
   }
