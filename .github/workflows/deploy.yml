@@ -22,6 +22,9 @@ jobs:
 
       - name: Build for Cloudflare
         run: npm run cf:build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Deploy
         run: npm run cf:deploy
