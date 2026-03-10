@@ -34,7 +34,7 @@ docs/              # Project documentation
 - **RLS**: All tables use `auth.uid() = user_id` policies — never bypass in user-facing code
 - **Summaries**: Computed on-the-fly from `transactions` table (no precomputed table)
 - **Data fetching**: SWR hooks in `src/hooks/`
-- **Auth guard**: `src/proxy.ts` — Next.js 16 "proxy" convention (replaces middleware)
+- **Auth guard**: `src/middleware.ts` — Edge middleware (Cloudflare Workers compatible)
 
 ## Commands
 - `npm run dev` — local development
