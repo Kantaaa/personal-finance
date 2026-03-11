@@ -47,6 +47,8 @@ export default function RecurringPage() {
     const hasScanned = localStorage.getItem("recurring_has_scanned");
     if (!hasScanned && !isLoading) {
       localStorage.setItem("recurring_has_scanned", "1");
+      // This intentionally kicks off the scan once on first visit.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       runScan();
     }
   }, [isLoading, runScan]);
