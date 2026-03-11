@@ -17,12 +17,17 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
+    // Guard against missing env in edge/runtime environments.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.redirect(new URL("/login?error=auth_config", origin));
+    }
+
     const response = NextResponse.redirect(new URL(redirect, origin));
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
+    try {
+      const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {
           getAll() {
             return request.cookies.getAll();
@@ -33,12 +38,15 @@ export async function GET(request: NextRequest) {
             });
           },
         },
-      },
-    );
+      });
 
-    const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-    if (!sessionError) {
-      return response;
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+      if (!sessionError) {
+        return response;
+      }
+    } catch {
+      // Fall through to login with a generic auth error.
+      return NextResponse.redirect(new URL("/login?error=auth", origin));
     }
   }
 
