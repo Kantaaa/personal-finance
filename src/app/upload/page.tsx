@@ -59,7 +59,8 @@ export default function UploadPage() {
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const text = await res.text();
-      let data: Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let data: any;
       try {
         data = JSON.parse(text);
       } catch {
@@ -69,12 +70,12 @@ export default function UploadPage() {
       if (!res.ok) {
         setError(data.error || "Upload failed");
         if (data.parseErrors?.length) {
-          setError((prev) => `${prev}\n\nParse errors:\n${data.parseErrors.join("\n")}`);
+          setError((prev: string | null) => `${prev}\n\nParse errors:\n${data.parseErrors.join("\n")}`);
         }
       } else {
         setResult(data);
         // Invalidate transaction caches so new data shows immediately
-        globalMutate((key) => Array.isArray(key) && key[0] === "transactions");
+        globalMutate((key: unknown) => Array.isArray(key) && key[0] === "transactions");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed — please try again.");
