@@ -38,10 +38,20 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch user's categories to validate parsed categories
-  const { data: userCategories } = await supabase
+  let { data: userCategories } = await supabase
     .from("categories")
     .select("name")
     .eq("user_id", user.id);
+
+  // Auto-seed default categories for new users (e.g. guest accounts)
+  if (!userCategories || userCategories.length === 0) {
+    await supabase.rpc("seed_default_categories", { p_user_id: user.id });
+    const { data: seeded } = await supabase
+      .from("categories")
+      .select("name")
+      .eq("user_id", user.id);
+    userCategories = seeded;
+  }
 
   const validNames = new Set(userCategories?.map((c) => c.name) ?? []);
 

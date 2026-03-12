@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSWRConfig } from "swr";
 import type { SourceType } from "@/lib/parsers/types";
 import { useAccounts } from "@/hooks/useAccounts";
 
@@ -26,15 +27,20 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { accounts, createAccount } = useAccounts();
+  const { mutate: globalMutate } = useSWRConfig();
 
   const [showNewAccount, setShowNewAccount] = useState(false);
   const [newAccountName, setNewAccountName] = useState("");
 
   async function handleCreateAccount() {
     if (!newAccountName.trim()) return;
-    await createAccount(newAccountName.trim(), "bank", source);
-    setNewAccountName("");
-    setShowNewAccount(false);
+    try {
+      await createAccount(newAccountName.trim(), "bank", source);
+      setNewAccountName("");
+      setShowNewAccount(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create account");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,24 +51,30 @@ export default function UploadPage() {
     setError(null);
     setResult(null);
 
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("source", source);
-    if (accountId) formData.set("accountId", accountId);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      formData.set("source", source);
+      if (accountId) formData.set("accountId", accountId);
 
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
-    const data = await res.json();
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error || "Upload failed");
-      if (data.parseErrors?.length) {
-        setError((prev) => `${prev}\n\nParse errors:\n${data.parseErrors.join("\n")}`);
+      if (!res.ok) {
+        setError(data.error || "Upload failed");
+        if (data.parseErrors?.length) {
+          setError((prev) => `${prev}\n\nParse errors:\n${data.parseErrors.join("\n")}`);
+        }
+      } else {
+        setResult(data);
+        // Invalidate transaction caches so new data shows immediately
+        globalMutate((key) => Array.isArray(key) && key[0] === "transactions");
       }
-    } else {
-      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed — please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
