@@ -64,7 +64,7 @@ function parseNorwegianNumber(value: string): number | null {
 
 function extractMerchant(description: string): string {
   // Strip CRV* prefix/suffix (Curve-routed transactions)
-  let name = description.replace(/^CRV\*/i, "").replace(/\s*CRV\*$/i, "").trim();
+  const name = description.replace(/^CRV\*/i, "").replace(/\s*CRV\*$/i, "").trim();
   // Take text before location/city info (rough heuristic)
   const parts = name.split(/\s{2,}/);
   return parts[0] || name;

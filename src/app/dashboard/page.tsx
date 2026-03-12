@@ -46,8 +46,22 @@ export default function DashboardPage() {
       <NavBar />
       <main className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <DashboardTabs active={tab} onChange={setTab} />
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This is the current v1 experience. You can try the experimental v2 prototype
+              to explore new ideas.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/v2"
+              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              Try v2 prototype
+            </Link>
+            <DashboardTabs active={tab} onChange={setTab} />
+          </div>
         </div>
 
         {/* Empty state */}
