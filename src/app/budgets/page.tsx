@@ -12,12 +12,12 @@ export default function BudgetsPage() {
   const { categories } = useCategories();
   const {
     budgets,
-    byCategory: budgetByCategory,
     isLoading,
     setBudget,
     deleteBudget,
   } = useBudgets();
-  const { data: summary } = useSummary("month", new Date());
+  const [refDate] = useState(() => new Date());
+  const { data: summary } = useSummary("month", refDate);
 
   const [editCategory, setEditCategory] = useState("");
   const [editAmount, setEditAmount] = useState("");

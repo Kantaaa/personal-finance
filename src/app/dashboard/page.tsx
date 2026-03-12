@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useSummary(period, refDate);
   const { data: trend, isLoading: trendLoading } = useMonthlyTrend();
   const { byCategory: budgetByCategory, isLoading: budgetLoading } = useBudgets();
-  const { data: transactions, totalCount, isLoading: txLoading } = useTransactions({});
+  const { totalCount, isLoading: txLoading } = useTransactions({});
   const { accounts, isLoading: accLoading } = useAccounts();
 
   // Redirect to onboarding if user has no transactions and no accounts
