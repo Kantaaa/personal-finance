@@ -6,7 +6,7 @@ const publicPaths = ["/login", "/register", "/reset-password", "/auth/callback"]
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
+  // Allow public paths without any auth check
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
@@ -34,6 +34,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // API routes: refresh tokens but don't redirect (API returns 401 itself)
+  if (pathname.startsWith("/api/")) {
+    return response;
+  }
+
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
@@ -45,6 +50,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

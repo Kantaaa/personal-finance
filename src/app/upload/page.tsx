@@ -58,7 +58,13 @@ export default function UploadPage() {
       if (accountId) formData.set("accountId", accountId);
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
+      const text = await res.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(text || `Server error (${res.status})`);
+      }
 
       if (!res.ok) {
         setError(data.error || "Upload failed");
