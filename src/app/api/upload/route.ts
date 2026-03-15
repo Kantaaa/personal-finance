@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { parseCSV, type SourceType } from "@/lib/parsers";
+import { categorize, type CategoryRule } from "@/lib/categorize";
 
 export const runtime = "edge";
 
@@ -23,30 +24,93 @@ export async function POST(request: NextRequest) {
   if (!file || !source) {
     return NextResponse.json(
       { error: "Missing file or source type" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
+  // 1. Parse CSV
   const csvText = await file.text();
-  const { transactions, errors } = parseCSV(source, csvText);
+  const { transactions: parsed, errors: parseErrors } = parseCSV(
+    source,
+    csvText
+  );
 
-  if (transactions.length === 0) {
+  if (parsed.length === 0) {
     return NextResponse.json(
-      { error: "No valid transactions found", parseErrors: errors },
-      { status: 400 },
+      { error: "No valid transactions found", parseErrors },
+      { status: 400 }
     );
   }
 
-  // Fetch user's categories to validate parsed categories
+  // 2. Fetch user's category rules (seed defaults if none exist)
+  let { data: rules } = await supabase
+    .from("category_rules")
+    .select("id, keyword, category, priority")
+    .eq("user_id", user.id);
+
+  if (!rules || rules.length === 0) {
+    await supabase.rpc("seed_default_category_rules", {
+      p_user_id: user.id,
+    });
+    const { data: seeded } = await supabase
+      .from("category_rules")
+      .select("id, keyword, category, priority")
+      .eq("user_id", user.id);
+    rules = seeded ?? [];
+  }
+
+  // 3. Categorize transactions
+  const categorized = categorize(parsed, rules as CategoryRule[]);
+
+  // 4. Validate categories against user's category list
   const { data: userCategories } = await supabase
     .from("categories")
     .select("name")
     .eq("user_id", user.id);
 
-  const validNames = new Set(userCategories?.map((c) => c.name) ?? []);
+  if (!userCategories || userCategories.length === 0) {
+    await supabase.rpc("seed_default_categories", { p_user_id: user.id });
+  }
 
-  // Insert transactions, falling back to "Other" for unknown categories
-  const rows = transactions.map((t) => ({
+  const { data: freshCategories } = await supabase
+    .from("categories")
+    .select("name")
+    .eq("user_id", user.id);
+
+  const validNames = new Set(freshCategories?.map((c) => c.name) ?? []);
+
+  // 5. App-level dedup: fetch existing transactions in the date range
+  const dates = categorized.map((t) => t.date).sort();
+  const { data: existing } = await supabase
+    .from("transactions")
+    .select("date, amount, description")
+    .eq("user_id", user.id)
+    .gte("date", dates[0])
+    .lte("date", dates[dates.length - 1]);
+
+  const existingKeys = new Set(
+    (existing ?? []).map(
+      (e) => `${e.date}|${e.amount}|${e.description ?? ""}`
+    )
+  );
+
+  const newTransactions = categorized.filter(
+    (t) => !existingKeys.has(`${t.date}|${t.amount}|${t.description ?? ""}`)
+  );
+
+  if (newTransactions.length === 0) {
+    return NextResponse.json({
+      inserted: 0,
+      skipped: categorized.length,
+      total: categorized.length,
+      dateRange: { from: dates[0], to: dates[dates.length - 1] },
+      categoryBreakdown: {},
+      parseErrors,
+    });
+  }
+
+  // 6. Build rows and insert
+  const rows = newTransactions.map((t) => ({
     user_id: user.id,
     account_id: accountId || null,
     date: t.date,
@@ -54,7 +118,10 @@ export async function POST(request: NextRequest) {
     currency: t.currency,
     description: t.description,
     merchant: t.merchant,
-    category: validNames.size > 0 && !validNames.has(t.category) ? "Other" : t.category,
+    category:
+      validNames.size > 0 && !validNames.has(t.category ?? "Other")
+        ? "Other"
+        : (t.category ?? "Other"),
     source_raw: `${source}:${file.name}`,
   }));
 
@@ -66,16 +133,27 @@ export async function POST(request: NextRequest) {
   if (insertError) {
     return NextResponse.json(
       { error: insertError.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
-  // Compute date range
-  const dates = transactions.map((t) => t.date).sort();
+  // 7. Compute response stats
+  const inserted = data?.length ?? 0;
+  const skipped = categorized.length - newTransactions.length;
+
+  // Category breakdown
+  const categoryBreakdown: Record<string, number> = {};
+  for (const t of categorized) {
+    const cat = t.category ?? "Other";
+    categoryBreakdown[cat] = (categoryBreakdown[cat] ?? 0) + 1;
+  }
 
   return NextResponse.json({
-    inserted: data?.length ?? 0,
+    inserted,
+    skipped,
+    total: categorized.length,
     dateRange: { from: dates[0], to: dates[dates.length - 1] },
-    parseErrors: errors,
+    categoryBreakdown,
+    parseErrors,
   });
 }
