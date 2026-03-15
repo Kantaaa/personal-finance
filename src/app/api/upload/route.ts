@@ -6,6 +6,7 @@ import { categorize, type CategoryRule } from "@/lib/categorize";
 export const runtime = "edge";
 
 export async function POST(request: NextRequest) {
+  try {
   const supabase = await getSupabaseServerClient();
 
   const {
@@ -156,4 +157,9 @@ export async function POST(request: NextRequest) {
     categoryBreakdown,
     parseErrors,
   });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    const stack = err instanceof Error ? err.stack : undefined;
+    return NextResponse.json({ error: message, stack }, { status: 500 });
+  }
 }
