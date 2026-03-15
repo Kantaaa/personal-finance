@@ -4,7 +4,8 @@ export interface ParsedTransaction {
   currency: string;
   description: string;
   merchant: string | null;
-  category: string;
+  category?: string;      // optional — assigned by categorization engine, not parser
+  type?: string;          // original transaction type (e.g. Overføring, Innbetaling, Betaling)
 }
 
 export interface ParseResult {
