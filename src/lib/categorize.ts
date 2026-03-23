@@ -28,7 +28,19 @@ export function categorize(
 
   return transactions.map((t) => {
     const desc = t.description.toLowerCase();
-    const matched = sorted.find((rule) => desc.includes(rule.keyword));
+
+    // Try matching against the full description first
+    let matched = sorted.find((rule) => desc.includes(rule.keyword));
+
+    // If no match and description contains commas, try each part separately
+    // Handles composite descriptions like "Bolig,strøm,gym,abo.,fskr."
+    if (!matched && desc.includes(",")) {
+      const parts = desc.split(",").map((p) => p.trim());
+      for (const part of parts) {
+        matched = sorted.find((rule) => part.includes(rule.keyword));
+        if (matched) break;
+      }
+    }
 
     let category: string;
     if (matched) {

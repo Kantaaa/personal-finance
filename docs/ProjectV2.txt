@@ -1,0 +1,224 @@
+BUDSJETTERINGSVERKTØY – BEHOVSANALYSE, BRUKERREISE OG FUNKSJONELLE KRAV
+
+INTRODUKSJON Dette dokumentet samler alle hovedideene og analysene for
+et budsjetteringsverktøy som skal hjelpe brukere med å få bedre oversikt
+over personlig økonomi. Systemet skal gjøre det enklere å forstå hvor
+pengene går ved å importere transaksjoner fra bankfiler og sammenligne
+disse med et planlagt budsjett.
+
+  ---------------
+  PROBLEMOMRÅDE
+  ---------------
+
+Mange mennesker har dårlig økonomisk oversikt fordi økonomien deres er
+fragmentert.
+
+Pengene flyter gjennom flere steder: - Brukskonto - Sparekonto -
+Kredittkort - Vipps - Faktura / Klarna - Felleskonto
+
+Brukere ser ofte saldoen sin, men vet ikke nødvendigvis hva pengene
+faktisk går til.
+
+Spesielt kredittkort skaper problemer fordi mange kun ser en samlet
+faktura ved slutten av måneden: Eksempel: Total kredittkortfaktura: 12
+480 kr
+
+Men brukeren vet ikke: - hvor mye gikk til mat - hvor mye gikk til
+klær - hvor mye gikk til restaurant - hvor mye gikk til transport
+
+Resultatet er manglende kategoriforståelse.
+
+  -------------
+  BRUKERBEHOV
+  -------------
+
+Brukeren ønsker å vite:
+
+1.  Hvor går pengene mine egentlig?
+2.  Bruker jeg mer eller mindre enn planlagt?
+3.  Hva har endret seg fra forrige måned?
+4.  Hvor mye kan jeg spare?
+
+Brukeren vil også minimere manuelt arbeid.
+
+Mange brukere har allerede et Excel-budsjett, men det oppdateres sjelden
+fordi det krever manuell registrering av hver transaksjon.
+
+Problemet med Excel-budsjett:
+
+Ny transaksjon → må oppdatere Excel → brukeren gidder ikke.
+
+Derfor må systemet være basert på: IMPORT → AUTOMATISK ANALYSE
+
+ikke manuell registrering.
+
+  ---------------------
+  MÅLGRUPPE (PERSONA)
+  ---------------------
+
+Alder: 20–40 år
+
+Typisk bruker: - Student, deltidsansatt eller fulltidsansatt - Har både
+faste og variable utgifter - Har ofte et budsjett i Excel eller i
+hodet - Ønsker bedre kontroll over økonomien
+
+Mål: - forstå pengebruk - holde seg innenfor budsjett - spare mer penger
+
+  ------------------------
+  PRODUKTETS KJERNEVERDI
+  ------------------------
+
+Produktet skal gi:
+
+1.  Automatisk økonomisk oversikt
+2.  Sammenligning mellom budsjett og faktisk forbruk
+3.  Analyse av økonomiske endringer over tid
+4.  Samle transaksjoner fra flere kontoer
+
+  --------------------
+  SYSTEMETS HOVEDIDÉ
+  --------------------
+
+1.  Bruker lager budsjett
+2.  Bruker importerer banktransaksjoner
+3.  Systemet kategoriserer transaksjoner
+4.  Systemet sammenligner mot budsjett
+5.  Brukeren får et dashboard med analyse
+
+  ----------------------------
+  BRUKERREISE (USER JOURNEY)
+  ----------------------------
+
+1.  Bruker oppretter konto
+
+2.  Bruker oppretter budsjett Eksempel kategorier:
+
+Mat Transport Restaurant Shopping Bolig Sparing
+
+Eksempel budsjett:
+
+Mat: 4000 Transport: 1200 Restaurant: 1500 Shopping: 2000 Bolig: 9000
+Sparing: 5000
+
+3.  Bruker importerer bankdata
+
+Bruker laster opp: CSV eller Excel eksportert fra nettbanken
+
+Eksempel transaksjoner:
+
+Date | Description | Amount 2026-03-01 | Rema 1000 | -340 2026-03-02 |
+Vy | -120 2026-03-03 | Salary | +32000
+
+Systemet parser filen og registrerer transaksjonene.
+
+4.  Systemet kategoriserer transaksjoner
+
+Eksempel:
+
+REMA → Mat KIWI → Mat VY → Transport ZARA → Klær
+
+5.  Dashboard viser analyse
+
+Brukeren ser:
+
+Budsjett vs faktisk:
+
+Kategori | Budsjett | Brukt | Diff Mat | 4000 | 4300 | -300 Transport |
+1200 | 900 | +300 Restaurant | 1500 | 2100 | -600
+
+  -------------------------
+  MÅNED TIL MÅNED ANALYSE
+  -------------------------
+
+Systemet kan vise utvikling:
+
+Februar: 26 000 brukt Mars: 29 000 brukt Januar: 31 000 brukt
+
+Eller per kategori:
+
+Restaurant: Februar: 1200 Mars: 2900 Endring: +1700
+
+Dette gir brukeren innsikt i økonomiske vaner.
+
+  --------------------
+  MULTI-KONTO STØTTE
+  --------------------
+
+Systemet må støtte flere kontoer.
+
+Eksempel:
+
+DNB brukskonto Sparekonto Kredittkort Felleskonto
+
+Alle transaksjoner samles i en felles liste.
+
+Data eksempel:
+
+Date | Description | Amount | Account 01 Mar | Rema | -340 | DNB 02 Mar
+| Vy | -120 | DNB 03 Mar | Zara | -800 | Credit Card 04 Mar | Salary |
++32000 | DNB
+
+  -----------
+  USER FLOW
+  -----------
+
+Lag konto → Opprett budsjett → Importer bankfil → System kategoriserer
+transaksjoner → Dashboard viser analyser → Bruker justerer kategorier
+eller budsjett
+
+  -------------------------
+  FUNKSJONELLE KRAV (MVP)
+  -------------------------
+
+Brukeradministrasjon
+
+-   Bruker kan opprette konto
+-   Bruker kan logge inn
+-   Brukerdata lagres
+
+Budsjettfunksjonalitet
+
+-   Opprette kategorier
+-   Legge inn budsjett per kategori
+-   Redigere budsjett
+
+Transaksjonsimport
+
+-   Laste opp CSV eller Excel
+-   Parser transaksjoner
+-   Støtte flere kontoer
+
+Kategorisering
+
+-   Automatisk kategorisering
+-   Manuell endring av kategori
+-   Lagre kategoriseringsregler
+
+Analyse
+
+-   Budsjett vs faktisk forbruk
+-   Kategorifordeling
+-   Måned til måned sammenligning
+
+  -----------------------
+  FREMTIDIGE FUNKSJONER
+  -----------------------
+
+Mulige videre funksjoner:
+
+-   Bankintegrasjon via Open Banking API
+-   AI-basert kategorisering
+-   Spareprognoser
+-   Varsler ved overskridelse av budsjett
+-   Mobilapp
+
+  --------------
+  OPPSUMMERING
+  --------------
+
+Hovedmålet med systemet er å gjøre økonomisk oversikt enkel ved å
+automatisere analyse av banktransaksjoner og sammenligne disse med
+brukerens budsjett.
+
+Systemet fokuserer på: - automatisering - oversikt - innsikt - minimal
+manuelt arbeid

@@ -26,7 +26,7 @@ function gradeColor(letter: string): string {
 const NOTES_KEY = "pf-v3-notes";
 
 export default function ReviewPage() {
-  const { data, loaded, totals, resetAll } = useV3Store();
+  const { data, loaded, totals, effectiveBudgets, archiveAndReset } = useV3Store();
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function ReviewPage() {
 
   // Build wins and alerts from category data
   const wins = CATEGORIES.map((cat) => {
-    const entry = data.budgets[cat.name];
+    const entry = effectiveBudgets[cat.name];
     if (!entry || entry.budget <= 0) return null;
     const saved = entry.budget - entry.actual;
     if (saved <= 0) return null;
@@ -69,7 +69,7 @@ export default function ReviewPage() {
   }[];
 
   const alerts = CATEGORIES.map((cat) => {
-    const entry = data.budgets[cat.name];
+    const entry = effectiveBudgets[cat.name];
     if (!entry || entry.budget <= 0) return null;
     const overspend = entry.actual - entry.budget;
     if (overspend <= 0) return null;
@@ -104,8 +104,8 @@ export default function ReviewPage() {
         </div>
         <button
           onClick={() => {
-            if (window.confirm("Start a fresh month? This resets all budget and actual data.")) {
-              resetAll();
+            if (window.confirm("Start a fresh month? Current data will be archived to Historical Trends before resetting.")) {
+              archiveAndReset();
             }
           }}
           className="shrink-0 px-6 py-3 rounded-xl font-semibold text-white bg-[var(--v3-primary)] hover:bg-[var(--v3-primary-alt)] transition-colors"
@@ -182,7 +182,7 @@ export default function ReviewPage() {
           {/* Per-category bars */}
           <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
             {CATEGORIES.map((cat) => {
-              const entry = data.budgets[cat.name];
+              const entry = effectiveBudgets[cat.name];
               if (!entry || entry.budget <= 0) return null;
               const catPct = Math.min((entry.actual / entry.budget) * 100, 100);
               const over = entry.actual > entry.budget;

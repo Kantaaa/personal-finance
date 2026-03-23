@@ -1,0 +1,333 @@
+V3 USER FLOW — COMPLETE PRODUCT FLOW & SCREEN SPECIFICATIONS
+==============================================================
+
+Product Promise:
+"Upload your bank transactions, review smart categorization,
+and instantly understand where your money goes."
+
+Target: Option A — lightweight finance insights app
+(CSV import → categorize → dashboard → monthly insights)
+
+
+================================================================================
+FULL FLOW (SIMPLIFIED)
+================================================================================
+
+  Upload CSV
+     |
+  Preview & validate
+     |
+  Auto-categorize
+     |
+  Review flagged transactions (only what matters)
+     |
+  Save & apply rules (app gets smarter)
+     |
+  Dashboard insights
+     |
+  Edit anytime
+     |
+  Repeat next month (faster each time)
+
+
+================================================================================
+1. ENTRY POINT
+================================================================================
+
+  - New user → Onboarding
+  - Returning user → Dashboard
+
+
+================================================================================
+2. ONBOARDING (first-time only)
+================================================================================
+
+Screen: Welcome / Onboarding
+Route: /v3 (when no data exists)
+
+Design: Full-screen editorial layout, no sidebar/nav.
+
+Layout:
+  Left (7 cols): Content column
+    - Phase badge: "Phase 01: Connection"
+    - Hero headline: "Welcome to Equilibrium, Sarah & Marcus."
+    - 3-step value loop (bento cards):
+      Step 01: Upload Transactions (CSV)
+      Step 02: Smart Review (30 Secs)
+      Step 03: Collective Insight
+    - CTA buttons:
+      Primary: "Upload Your First CSV"
+      Secondary: "Try with Sample Data"
+
+  Right (5 cols): Visual column
+    - Hero image with gradient overlay
+    - Floating card: "Your Financial Story Starts Here"
+    - Equity tracker mockup (shared balance widget)
+    - Security badge: "Bank-Level, End-to-end encrypted"
+
+Key UX principles:
+  - Reduce friction, explain value fast
+  - Sample demo option (super powerful for first impressions)
+  - No navigation shown — pure transactional onboarding
+
+
+================================================================================
+3. UPLOAD & COLUMN MAPPING
+================================================================================
+
+Screen: Smart Import & Column Mapping
+Route: /v3/import (or modal within transactions)
+
+Layout:
+  Left (8 cols): Upload + Mapping
+    - Step 03: Upload zone
+      - Drag & drop area
+      - "Supports CSV, OFX, and QFX formats"
+      - Browse Files button
+    - Step 04: Column Mapping
+      - Two-column layout:
+        Left: Equilibrium Standard fields (Date, Amount, Merchant, Balance)
+        Right: Dropdown selectors mapping to CSV columns
+      - "Save this mapping for [Bank Name] CSVs" checkbox
+
+  Right (4 cols): Sidebar Summary
+    - Premium card (dark green gradient):
+      - Date range detected
+      - Transaction count
+      - Duplicates detected ("Smart Skip")
+      - Equity Stability Score (%)
+    - "Confirm & Import" CTA button
+    - Data handling policy link
+
+Key features:
+  - Auto-detect file structure
+  - Column mapping with dropdowns
+  - Save mapping per bank for reuse
+  - Preview stats before committing
+
+
+================================================================================
+4. SMART REVIEW QUEUE (Key Screen)
+================================================================================
+
+Screen: Focus-Based Review Queue
+Route: /v3/review-queue (or tab within transactions)
+
+Header:
+  - "Action Required" label
+  - "Review Queue" headline
+  - "8 Items Needing Attention" subtitle
+  - "Finish & Update Dashboard" CTA button
+
+Layout: 12-column bento grid
+
+Section 1 — Uncategorized Transactions (8 cols):
+  - Grid of cards (2 columns)
+  - Each card shows:
+    - Merchant name + date + amount
+    - Contextual icon (coffee, cloud, car, etc.)
+    - Category dropdown selector
+    - "Save as Auto-Rule" toggle switch
+  - Only shows transactions that need action
+
+Section 2 — AI Confidence Review (4 cols):
+  - Suggestion cards for low-confidence categorizations
+  - Each shows:
+    - Merchant name
+    - "Suggestion" or "Learned Rule" badge
+    - Suggested category with explanation
+    - Confirm / Edit buttons
+  - Shows when system has a guess but isn't confident
+
+Section 3 — Possible Duplicates (12 cols, bottom):
+  - Side-by-side comparison cards
+  - Each duplicate group shows:
+    - Merchant name
+    - "Potential Double Charge" or "Similar Activity" badge
+    - Transaction A vs Transaction B
+    - Amount, date, time for each
+    - "Keep This" / "Discard" buttons
+
+Floating FAB:
+  - "Finish Review" button (bottom-right)
+  - Tooltip on hover
+
+Key UX principles:
+  - ONLY show what needs attention
+  - Don't force users to review 200 good transactions
+  - Make categorization feel like a conversation, not a chore
+
+
+================================================================================
+5. SMART TRANSACTION REVIEW & IMPORT
+================================================================================
+
+Screen: Smart Transaction Review (alternative/detailed view)
+Route: /v3/transactions
+
+Top banner:
+  - Import status: "CSV Uploaded Successfully"
+  - Stats: "142 transactions found in Chase-9283 • Oct 1 - Oct 31"
+  - "2 Duplicates detected and skipped"
+  - "Import New" button
+
+Review Queue section:
+  - Bento-style cards (2 columns)
+  - Each card shows:
+    - Avatar initials + merchant name
+    - Date + suggested category with "?"
+    - Amount + confidence badge ("Low Confidence" / "Needs Review")
+    - Actions: Confirm Category / Edit / Save as Rule (icon)
+
+Ongoing Corrections section (table):
+  - Full transaction table with columns:
+    Status | Transaction | Category | Date | Amount | Edit
+  - Status types:
+    - "Auto-Categorized" (green dot)
+    - "Rule Applied" (primary dot)
+  - Search bar + filter button
+  - Pagination: "Showing 1-10 of 140 transactions"
+  - Edit button visible on hover
+
+Key insight:
+  "Users can always edit transactions later, not only during import.
+   That part matters because users will always notice something later."
+
+
+================================================================================
+6. ENHANCED DASHBOARD
+================================================================================
+
+Screen: Financial Insights Dashboard
+Route: /v3 (for returning users)
+
+Header:
+  - "Financial Insights" headline
+  - Month selector
+  - Export Report button
+
+Layout: 12-column bento grid
+
+Row 1 — High-Level Stats (8 cols) + Unusual Spending (4 cols):
+  Stats cards (3 columns):
+    - Total Income ($8,420) with trend arrow
+    - Total Expenses ($5,130) with trend arrow
+    - Savings Rate (39.1%) with progress bar
+
+  Unusual Spending card:
+    - Warning icon + "Unusual Spending" header
+    - "Dining Out Spike" — +15% vs 6-month average
+    - "View category breakdown" link
+    - Decorative background icon
+
+Row 2 — Spending Velocity (8 cols) + Side Panels (4 cols):
+  Spending Velocity chart:
+    - SVG line chart with gradient fill
+    - Current spending line vs target baseline
+    - Floating data point tooltip
+    - X-axis: Oct 01 → Oct 31
+
+  Side panels:
+    Recurring Detected card:
+      - List of detected subscriptions (Netflix, Spotify, etc.)
+      - Monthly amounts
+      - "Manage all 14 subscriptions" link
+
+    Top Merchants card:
+      - Horizontal bar chart
+      - Merchant name + spend amount
+      - Sorted by spend
+
+Row 3 — Recent Activity (12 cols):
+  - Full-width transaction table
+  - Columns: Merchant | Category | Date | Amount | Action
+  - Category badges (colored pills)
+  - Income shown in green
+  - "View all transactions" link
+
+
+================================================================================
+7. DASHBOARD VARIANT — VERDANT EQUILIBRIUM
+================================================================================
+
+Screen: Insights Dashboard (editorial style)
+Route: /v3 (alternative design)
+
+Hero section:
+  - "Monthly Growth" headline
+  - "12% increase in net savings" highlight
+
+Stats grid (3 cols):
+  - Total Income card
+  - Total Expenses card
+  - Total Savings card (dark green, with progress bar)
+
+Asymmetric section (5 cols total):
+  Left (3 cols):
+    Category Breakdown:
+      - Horizontal bar charts per category
+      - Housing, Dining, Transport, Health
+    Collaborative Notes:
+      - Chat-style messages between Sarah & Marcus
+      - Left-aligned (Sarah) / right-aligned (Marcus)
+      - Topic: discussing subscription consolidation
+
+  Right (2 cols):
+    Top Spikes:
+      - "Dining Out" +15% (error/red)
+      - "Retail" +4% (neutral)
+    Recurring Detected:
+      - 5 active subscriptions list
+      - Total recurring: $84.50/mo
+
+
+================================================================================
+KEY UX PRINCIPLES
+================================================================================
+
+  1. Don't force users to review everything
+     → Only show what matters
+
+  2. Make it feel smarter over time
+     → Rules = secret weapon. App learns from every correction.
+
+  3. Fast "time to value"
+     → User should get insights in < 2 minutes
+
+  4. Trust > automation
+     → Always let user override system
+
+  5. The ongoing loop
+     → Each month is faster because rules accumulate
+
+
+================================================================================
+IMPLEMENTATION PRIORITY
+================================================================================
+
+  Phase 1 (Current — mostly done):
+    [x] CSV upload with source selection
+    [x] Auto-categorization with keyword rules
+    [x] Import preview (parse → review → confirm)
+    [x] Smart review queue ("Needs Review" filter)
+    [x] Save rules from user corrections
+    [x] Computed actuals from approved transactions
+    [x] Budget planner with multiple incomes + templates
+    [x] Historical trends with archive
+
+  Phase 2 (Next):
+    [ ] Focus-based review cards (bento grid, not table)
+    [ ] Duplicate detection UI (side-by-side comparison)
+    [ ] Low-confidence suggestion cards with confirm/edit
+    [ ] Enhanced dashboard with spending velocity chart
+    [ ] Unusual spending alerts
+    [ ] Recurring subscription detection
+    [ ] Top merchants ranking
+
+  Phase 3 (Future):
+    [ ] Onboarding flow (welcome screen + sample data)
+    [ ] Column mapping for unknown CSV formats
+    [ ] Collaborative notes (chat-style, not vault)
+    [ ] Export report as PDF
+    [ ] Search + filter across all transactions
+    [ ] Pagination for large transaction sets

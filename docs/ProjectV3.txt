@@ -1,0 +1,713 @@
+V3 BUDGET PLANNER – FUNCTIONAL REQUIREMENTS, DESIGN & USER FLOWS
+==================================================================
+
+INTRODUCTION
+------------
+V3 is a standalone budget planning module ("The Fiscal Atelier") built with a
+custom design system (Stitch). It is a client-side MVP that stores all data in
+localStorage, decoupled from the v1/v2 Supabase-backed system. The goal is to
+validate a richer, couples-friendly budget planning UX before migrating to
+server-side persistence.
+
+V3 sits under the /v3 route and has its own layout, sidebar navigation, dark
+mode toggle, and four pages: Dashboard, Budget Planner, Transactions, and
+Monthly Review.
+
+This document covers the complete feature set, functional requirements, data
+model, design system, and user flows for the v3 module.
+
+
+================================================================================
+1. PROBLEM STATEMENT
+================================================================================
+
+V1/V2 treated income as a single number. Real households often have:
+
+  - Two working partners with separate salaries
+  - Side income (freelance, rental, dividends)
+  - Seasonal budget needs (Christmas gifts, summer vacation, back-to-school)
+
+Users need:
+  1. Multiple income sources with labels and amounts
+  2. Reusable budget templates for recurring seasonal periods
+  3. Inline editing of all budget values with immediate visual feedback
+  4. A clear view of how much income is allocated vs. unallocated
+
+
+================================================================================
+2. TARGET USERS
+================================================================================
+
+Primary:
+  - Couples managing shared finances (two salaries + possible side income)
+  - Individuals with multiple revenue streams
+
+Secondary:
+  - Anyone wanting seasonal budget planning (Christmas, vacation, etc.)
+  - Power users who want fast inline editing without form navigation
+
+
+================================================================================
+3. V3 PAGES & NAVIGATION
+================================================================================
+
+  Route               Page              Description
+  ─────────────────── ─────────────────  ─────────────────────────────────────
+  /v3                 Dashboard          Donut chart, balance, recent txns
+  /v3/budget          Budget Planner     Income sources, templates, categories
+  /v3/transactions    Transactions       Manual transaction entry & review
+  /v3/review          Monthly Review     Grade, wins/alerts, variance, reset
+
+Layout:
+  - Desktop: Fixed 264px sidebar (left) + top app bar
+  - Mobile: Bottom tab navigation (4 tabs) + top app bar
+  - Dark mode toggle in top bar (persisted to localStorage)
+
+
+================================================================================
+4. BUDGET PLANNER PAGE — FEATURE SPECIFICATION
+================================================================================
+
+The Budget Planner (/v3/budget) is the core page of v3. It is divided into
+four sections stacked vertically:
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  Section A: Templates & Config Bar                                     │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Section B: Income Sources (8 cols) + Stats Cards (4 cols)             │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Section C: Category Breakdown Table (full width)                      │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Section D: Insights Bento (Trends 2 cols, Savings 1 col, Bills 1 col)│
+  └─────────────────────────────────────────────────────────────────────────┘
+
+
+4.1 SECTION A — TEMPLATES & CONFIG BAR
+---------------------------------------
+
+Purpose: Load or save budget templates for reuse.
+
+Components:
+  - "Load Template" dropdown button
+    - Opens a dropdown listing all saved templates
+    - Each item shows: template name, income count, total income
+    - Click to load → replaces current incomes + budget targets (keeps actuals)
+    - Delete button (trash icon) per template, visible on hover
+    - Empty state: "No templates saved yet" message
+  - "Save as Template" button
+    - Opens a modal dialog
+    - User enters template name (e.g. "Christmas Budget", "Summer Vacation")
+    - Saves current incomes + budget targets (actuals are zeroed in template)
+  - Current month indicator (right-aligned, shows YYYY-MM)
+
+Functional Requirements:
+  FR-T1: User can save current budget config as a named template
+  FR-T2: User can load a template, replacing incomes and targets
+  FR-T3: Loading a template preserves current actual spend values
+  FR-T4: User can delete a template from the dropdown
+  FR-T5: Templates persist across browser sessions (localStorage)
+  FR-T6: Template names must be non-empty
+
+
+4.2 SECTION B — INCOME SOURCES + STATS
+---------------------------------------
+
+Left panel (8/12 cols): Income Sources Card
+
+Components:
+  - Header: "Income Sources" + "Add Income" button
+  - Income cards grid (1 col mobile, 2 cols desktop)
+    - Each card shows:
+      - Label (e.g. "Partner 1 (Salary)")
+      - Amount in NOK, large bold text
+      - Color-coded left border (cycles through 5 colors)
+      - Person icon (cycles through 5 icon variants)
+      - Edit action (click amount → opens edit dialog)
+      - Remove button (X icon, visible on hover)
+  - Footer: Total Monthly Income (sum of all sources)
+  - Empty state: Centered icon + "Add Your First Income" CTA button
+
+Add/Edit Income Dialog:
+  - Modal overlay with backdrop blur
+  - Fields: Label (text), Monthly Amount (number)
+  - Enter key submits
+  - Cancel / Add|Update buttons
+
+Functional Requirements:
+  FR-I1: User can add unlimited income sources with label + amount
+  FR-I2: User can edit any existing income source (label and/or amount)
+  FR-I3: User can remove an income source
+  FR-I4: Total income auto-computes as sum of all sources
+  FR-I5: Legacy single-income data auto-migrates to incomes array
+  FR-I6: All amounts must be >= 0
+
+Right panel (4/12 cols): Stats Cards
+
+  Card 1 — "Remaining to Allocate":
+    - Premium gradient background (teal)
+    - Shows: totalIncome - totalBudgetTargets
+    - Progress bar: percentage of income allocated to budget targets
+    - Decorative background circles + icon
+
+  Card 2 — "Allocation Health":
+    - Circular progress indicator (percentage ring)
+    - Contextual message based on allocation percentage:
+      - 0%: "Add income and set budget targets to start."
+      - 1-49%: "Over half your income is unallocated."
+      - 50-79%: "Good progress! A few more categories could be planned."
+      - 80-100%: "Your budget is well distributed across categories."
+      - >100%: "You've over-allocated your income."
+
+
+4.3 SECTION C — CATEGORY BREAKDOWN TABLE
+-----------------------------------------
+
+A 12-column grid table with the following columns:
+
+  Col 1-4: Category Name (icon + name + group label)
+  Col 5-6: Target Amount (inline editable number input)
+  Col 7-8: Actual Spent (inline editable, red text when over budget)
+  Col 9-11: Budget Status (progress bar + status labels)
+  Col 12: Actions menu (more_vert, visible on hover)
+
+10 predefined categories:
+  1. Rent & Utilities   (home)           — Fixed Monthly
+  2. Groceries          (shopping_basket) — Variable Monthly
+  3. Eating Out         (restaurant)     — Entertainment
+  4. Transport          (directions_car) — Fuel & Transit
+  5. Subscriptions      (subscriptions)  — Services
+  6. Health             (favorite)       — Wellness
+  7. Shopping           (shopping_cart)   — Retail
+  8. Insurance          (shield)         — Protection
+  9. Savings            (savings)        — Investments
+  10. Other             (more_horiz)     — Miscellaneous
+
+Status bar behavior:
+  - No target set: "No target set" (muted text)
+  - 0-79% used: Green bar, "X% Used" + "Y kr left"
+  - 80-99% used: Yellow/amber bar
+  - 100% used: Green bar, "Fully Settled" + "On Track"
+  - >100% used: Red bar, "Over budget" + "-Y kr"
+
+Grand Total Footer Row:
+  - Highlighted background
+  - Shows total Target and total Actual
+  - Status badge:
+    - Under budget: Green pill "● Under Budget by X kr"
+    - Over budget: Red pill "● Over Budget by X kr"
+
+Functional Requirements:
+  FR-C1: All 10 categories are always visible (not user-addable in v3)
+  FR-C2: Target and actual values are inline-editable number inputs
+  FR-C3: Changes persist immediately to localStorage
+  FR-C4: Progress bars animate on value change (500ms transition)
+  FR-C5: Grand total row auto-computes from all categories
+
+
+4.4 SECTION D — INSIGHTS BENTO GRID
+------------------------------------
+
+4-column grid (2+1+1 on desktop, stacked on mobile):
+
+  Card 1 (2 cols) — Spending Trends:
+    - Top 5 categories sorted by actual spend
+    - Stacked horizontal bars: gray = target, colored = actual
+    - Color coding: green/yellow/red based on budget utilization
+    - Legend at bottom
+
+  Card 2 (1 col) — Savings Goal:
+    - Tracks the "Savings" category specifically
+    - Shows actual saved / target
+    - Progress bar with percentage
+    - "Active" badge when target > 0
+    - Empty state when no savings target set
+
+  Card 3 (1 col) — Fixed Bills:
+    - Lists: Rent & Utilities, Insurance, Subscriptions
+    - Only shows categories with target > 0
+    - Shows target amount per bill
+    - Empty state when none set
+
+
+================================================================================
+5. HISTORICAL TRENDS PAGE — FEATURE SPECIFICATION (/v3/history)
+================================================================================
+
+The Historical Trends page provides long-term financial visibility by
+archiving monthly snapshots and displaying them as charts, tables, and trends.
+
+Data is archived automatically when the user clicks "Finish Review" on the
+Monthly Review page. The page uses the Stitch design system and adapts to
+the v3 layout with sidebar and mobile navigation.
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  Section A: Timeline Selection (Year tabs + Month indicators)          │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Section B: Income vs Spending Chart (8 cols) + Side Panels (4 cols)   │
+  │    Left:  Bar chart (6-month) + Comparison table + Category history    │
+  │    Right: Trending categories + Collaborative vault + Savings ring     │
+  ├─────────────────────────────────────────────────────────────────────────┤
+  │  Section C: Recent History Log (full width)                            │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+
+5.1 SECTION A — TIMELINE SELECTION
+-----------------------------------
+
+  - Year tabs: toggleable buttons for each year with archived data
+  - Month indicators: 12-month strip showing which months have data
+    (highlighted) vs. empty months (muted)
+  - Months with data get a card-style highlight
+
+
+5.2 SECTION B — MAIN DASHBOARD GRID
+-------------------------------------
+
+Left panel (8/12 cols):
+
+  Income vs. Spending Chart:
+    - Grouped vertical bars for last 6 months (chronological)
+    - Three bars per month: Spending, Income, Net Savings
+    - Color coding: primary (income), secondary-container (spending),
+      green/red (net positive/negative)
+    - Hover tooltips showing amounts
+    - Legend: Income / Spending / Net
+
+  Historical Comparison Table:
+    - Side-by-side metrics for last 3 months
+    - Rows: Total Income, Total Spending, Surplus, Savings Rate
+    - Current month highlighted with "NOW" badge
+    - Color coding: green for surplus, red for deficit
+
+  Category-by-Category History (6-month):
+    - Table showing actual spend per category across last 6 months
+    - Only shows categories with at least one non-zero value
+    - Icon + name per row, month columns with amounts
+    - Helps spot seasonality (e.g. higher utility bills in winter)
+
+Right panel (4/12 cols):
+
+  Trending Categories:
+    - Top 5 categories by absolute % change vs previous month
+    - Each shows: icon, name, trend direction, % change, current amount
+    - Color coding: red for increase >5%, green for decrease >5%, gray for flat
+    - Empty state when < 2 months of data
+
+  Collaborative Vault:
+    - Premium gradient card (teal)
+    - Shared notes between partners/household members
+    - Each note shows: author initial avatar, author name, date, italic text
+    - Add note button → modal dialog (author name + text)
+    - Delete notes on hover
+    - Scrollable with max 5 visible
+    - Decorative background icon
+
+  Average Savings Rate Ring:
+    - SVG donut/ring chart showing average savings rate over last 6 months
+    - Percentage in center with label
+    - Green stroke proportional to rate
+    - Formula: avg of (income - actual) / income per month
+
+
+5.3 SECTION C — RECENT HISTORY LOG
+------------------------------------
+
+  - Vertical timeline of archived month entries
+  - Each entry shows: month abbreviation + year, title, detail line
+  - Left border color: green (under budget) or red (over budget)
+  - Chevron icon for future drill-down expansion
+  - Max 5 most recent entries
+
+
+5.4 FUNCTIONAL REQUIREMENTS
+-----------------------------
+
+  FR-H1:  Monthly Review "Finish Review" archives current month to history
+  FR-H2:  Archive captures: incomes, budgets (targets + actuals), totals, notes
+  FR-H3:  Same month re-archived updates existing snapshot (no duplicates)
+  FR-H4:  History persists across sessions (localStorage: "pf-v3-history")
+  FR-H5:  Empty state shown when no archived data exists
+  FR-H6:  Income vs Spending chart shows up to 6 months chronologically
+  FR-H7:  Comparison table shows last 3 months side-by-side
+  FR-H8:  Category history shows per-category actuals across 6 months
+  FR-H9:  Trending categories compare current month to previous month
+  FR-H10: Vault notes are shared/collaborative (localStorage: "pf-v3-vault")
+  FR-H11: Users can add vault notes with author name + text
+  FR-H12: Users can delete vault notes
+  FR-H13: Savings rate ring computes average over available months (max 6)
+  FR-H14: Year selector filters which months are highlighted
+  FR-H15: All amounts displayed in NOK (nb-NO locale)
+
+
+================================================================================
+6. DASHBOARD PAGE (/v3)
+================================================================================
+
+Features:
+  - Welcome state when income = 0 (CTA to go to Budget Planner)
+  - Summary cards: Total Income, Total Spent, Balance
+  - Donut chart: spending by category (interactive hover)
+  - Recent transactions list (last 5)
+  - Income editor (inline, for quick adjustments)
+
+Note: Dashboard uses legacy data.income field which auto-syncs from incomes[].
+
+
+================================================================================
+6. TRANSACTIONS PAGE (/v3/transactions)
+================================================================================
+
+Features:
+  - Manual transaction entry form:
+    - Description, amount, category (dropdown), date, status
+  - Transaction list with status filtering (All / Pending / Approved)
+  - Bulk actions: approve all, delete selected
+  - Floating action bar for multi-select operations
+  - Each transaction editable inline
+
+
+================================================================================
+7. MONTHLY REVIEW PAGE (/v3/review)
+================================================================================
+
+Features:
+  - Overall grade (A+ to D) based on budget utilization percentage:
+    - ≤50% = A+, ≤70% = A-, ≤85% = B, ≤100% = C, >100% = D
+  - Wins section: categories where actual < target (shows savings)
+  - Alerts section: categories where actual > target (shows overspend)
+  - Variance table: all categories with planned vs actual
+  - Notes / Adjustment Plan: free-form textarea (persisted to localStorage)
+  - "Finish Review" button: resets all data for new month
+
+
+================================================================================
+8. DATA MODEL
+================================================================================
+
+All data is stored in browser localStorage.
+
+8.1 Main Data (key: "pf-v3-data")
+
+  interface V3Data {
+    income: number;                        // Legacy computed field (sum of incomes)
+    incomes: IncomeSource[];               // Multiple income sources
+    budgets: Record<string, BudgetEntry>;  // Per-category budget data
+    transactions: Transaction[];           // Manual transaction list
+    month: string;                         // "YYYY-MM"
+  }
+
+  interface IncomeSource {
+    id: string;        // UUID
+    label: string;     // User-defined label
+    amount: number;    // Monthly amount (>= 0)
+  }
+
+  interface BudgetEntry {
+    budget: number;    // Target monthly limit
+    actual: number;    // Spent/actual amount
+  }
+
+  interface Transaction {
+    id: string;
+    description: string;
+    amount: number;              // Positive = income, negative = expense
+    category: CategoryName;
+    date: string;                // "YYYY-MM-DD"
+    status: "pending" | "approved";
+  }
+
+8.2 Templates (key: "pf-v3-templates")
+
+  interface BudgetTemplate {
+    id: string;        // UUID
+    name: string;      // User-defined name
+    incomes: IncomeSource[];
+    budgets: Record<string, BudgetEntry>;  // actuals zeroed
+    createdAt: string; // ISO timestamp
+  }
+
+8.3 Monthly Snapshots (key: "pf-v3-history")
+
+  interface MonthlySnapshot {
+    month: string;         // "YYYY-MM"
+    incomes: IncomeSource[];
+    totalIncome: number;
+    totalBudget: number;
+    totalActual: number;
+    budgets: Record<string, BudgetEntry>;
+    notes: string;         // Review notes at time of archive
+    archivedAt: string;    // ISO timestamp
+  }
+
+  - Created automatically when "Finish Review" is clicked
+  - Sorted newest-first in storage
+  - Same month re-archived → updates existing entry (no duplicates)
+
+8.4 Vault Notes (key: "pf-v3-vault")
+
+  interface VaultNote {
+    id: string;        // UUID
+    author: string;    // User-entered name
+    date: string;      // ISO date
+    text: string;      // Free-form note content
+    month: string;     // "YYYY-MM" — month context
+  }
+
+  - Collaborative notes shared between household members
+  - Stored newest-first
+  - Not tied to archive lifecycle — can be added/deleted anytime
+
+8.5 Other localStorage keys
+
+  "pf-v3-dark"    — Dark mode preference ("true" / "false")
+  "pf-v3-notes"   — Monthly review notes (string, cleared on archive)
+
+8.6 Data Migration
+
+  When loading data, if the `incomes` array is missing:
+    - Create it from the legacy `income` number (as "Main Salary")
+    - Ensure all 10 categories exist in `budgets`
+    - Sync the legacy `income` field as sum of `incomes[]`
+
+
+================================================================================
+9. DESIGN SYSTEM — "STITCH"
+================================================================================
+
+9.1 Color Palette (CSS Custom Properties)
+
+  Light Mode:
+    --v3-bg:                #f7f9ff    Surface background
+    --v3-surface-low:       #f1f4fa    Secondary bg, form fields
+    --v3-card:              #ffffff    Card/modal background
+    --v3-surface-high:      #e5e8ee    Dividers, subtle borders
+    --v3-surface-highest:   #dfe3e8    Stronger borders
+    --v3-text:              #181c20    Primary text
+    --v3-text-muted:        #3e4948    Secondary text
+    --v3-primary:           #005050    Teal — primary actions
+    --v3-primary-alt:       #006a6a    Brighter teal
+    --v3-green:             #005315    Success / under budget
+    --v3-green-light:       #9af897    Light green accent
+    --v3-green-dim:         #7edb7e    Mid green
+    --v3-red:               #ba1a1a    Error / over budget
+    --v3-red-container:     #ffdad6    Error background
+    --v3-secondary:         #326576    Blue accent
+    --v3-secondary-container: #b5e7fb  Blue accent bg
+    --v3-border:            #bec9c8    Default borders
+    --v3-outline:           #6e7979    Hint / placeholder text
+
+  Dark Mode: Full inversion (defined in .v3.dark class)
+
+9.2 Typography
+
+  Headlines:  Manrope (600, 700, 800 weights)
+  Body/Label: Inter (400, 500, 600 weights)
+  Icons:      Google Material Symbols Outlined
+
+9.3 Component Patterns
+
+  - Premium gradient:   linear-gradient(135deg, --v3-gradient-from, --v3-gradient-to)
+  - Cards:              --v3-card bg, 1px border --v3-surface-high, rounded-2xl, shadow-sm
+  - Inline inputs:      Transparent bg, border on focus, right-aligned tabular-nums
+  - Progress bars:      Height 1.5-2px, rounded-full, color-coded
+  - Modals:             Fixed overlay, backdrop-blur, centered card, max-w-md
+  - Buttons:            Primary (filled gradient), Secondary (text only), Danger (red)
+  - Hover states:       Opacity transitions, scale on active
+  - Status badges:      Pill shape, uppercase, 10px font, ring border
+
+
+================================================================================
+10. USER FLOWS
+================================================================================
+
+10.1 First-Time Setup Flow
+
+  1. User navigates to /v3
+  2. Dashboard shows welcome state (no income)
+  3. User clicks "Go to Budget Planner"
+  4. Budget Planner shows empty income state
+  5. User clicks "Add Your First Income"
+  6. Dialog opens → user enters label + amount → submits
+  7. Income card appears, total updates
+  8. User optionally adds more income sources
+  9. User scrolls to Category Breakdown
+  10. User enters target amounts per category (inline editing)
+  11. "Remaining to Allocate" card updates in real-time
+  12. Budget is ready — user can navigate to Transactions or Dashboard
+
+10.2 Couples Setup Flow
+
+  1. User opens Budget Planner
+  2. Adds "Partner 1 (Salary)" — kr 35 000
+  3. Adds "Partner 2 (Salary)" — kr 28 000
+  4. Optionally adds "Freelance Income" — kr 5 000
+  5. Total shows kr 68 000
+  6. User allocates targets across categories
+  7. Allocation Health shows progress toward full allocation
+
+10.3 Template Save & Load Flow
+
+  Save:
+    1. User configures incomes + budget targets for a specific scenario
+    2. Clicks "Save as Template"
+    3. Dialog opens → enters name (e.g. "Christmas Budget") → saves
+    4. Template stored in localStorage
+
+  Load:
+    1. User clicks "Load Template"
+    2. Dropdown shows saved templates
+    3. User clicks a template
+    4. Incomes and targets are replaced (actuals preserved)
+    5. User can further adjust as needed
+
+  Seasonal workflow:
+    - User has "Normal Month" template (default budget)
+    - User has "Christmas" template (higher Shopping, Eating Out budgets)
+    - In November, loads "Christmas" template
+    - In January, loads "Normal Month" template back
+
+10.4 Monthly Cycle Flow
+
+  Start of month:
+    1. Load appropriate template (or continue from last month)
+    2. Adjust income sources if changed
+
+  During month:
+    3. Enter transactions on Transactions page
+    4. Check Budget Planner to see actual vs target
+    5. Monitor dashboard for overall health
+
+  End of month:
+    6. Navigate to Monthly Review
+    7. Review grade, wins, alerts, variance
+    8. Write adjustment notes for next month
+    9. Click "Finish Review" → data archived to history, then reset
+    10. Navigate to Historical Trends to see long-term patterns
+
+10.5 Historical Trends Flow
+
+  Viewing:
+    1. Navigate to /v3/history
+    2. Select year from timeline tabs
+    3. See Income vs Spending chart for last 6 months
+    4. Compare metrics across last 3 months in comparison table
+    5. Check category history for seasonality patterns
+    6. Review trending categories for month-over-month changes
+
+  Collaborative Notes:
+    1. Click "+" button on Collaborative Vault card
+    2. Enter author name and note text
+    3. Note appears in vault, visible to all household members
+    4. Hover to delete outdated notes
+
+  Archive Trigger:
+    - Happens automatically when "Finish Review" is clicked
+    - If same month already archived, updates the existing snapshot
+    - Notes from the review page are included in the archive
+
+10.6 Income Edit / Remove Flow
+
+  Edit:
+    1. User clicks the amount on an income card
+    2. Dialog opens pre-filled with current label + amount
+    3. User modifies values → clicks "Update"
+    4. Total income and remaining-to-allocate update immediately
+
+  Remove:
+    1. User hovers over income card
+    2. Clicks X button
+    3. Income source removed immediately
+    4. Total income recalculated
+
+
+================================================================================
+11. COMPUTED VALUES & FORMULAS
+================================================================================
+
+  Total Income       = SUM(incomes[].amount)
+  Total Budget       = SUM(budgets[*].budget)
+  Total Actual       = SUM(budgets[*].actual)
+  Remaining          = Total Income - Total Actual
+  Budget Remaining   = Total Budget - Total Actual
+  Unallocated        = Total Income - Total Budget
+  Allocation %       = (Total Budget / Total Income) * 100
+  Category %         = (category.actual / category.budget) * 100
+  Overall %          = (Total Actual / Total Budget) * 100
+  Savings Rate       = (Total Income - Total Actual) / Total Income * 100
+  Avg Savings Rate   = AVG(savings_rate) over last 6 archived months
+  Category Trend %   = (current_actual - prev_actual) / prev_actual * 100
+
+
+================================================================================
+12. NON-FUNCTIONAL REQUIREMENTS
+================================================================================
+
+  NFR-1: All data stored client-side (localStorage), no server calls
+  NFR-2: Page must work offline after initial load
+  NFR-3: Dark mode must be fully supported
+  NFR-4: Responsive: mobile (< 768px), tablet, desktop
+  NFR-5: All number inputs accept Norwegian locale values
+  NFR-6: Currency displayed in NOK format (nb-NO locale)
+  NFR-7: No external state management library (custom hooks only)
+  NFR-8: CSS custom properties for theming (no Tailwind config colors)
+  NFR-9: Animations: 300-500ms transitions, no janky reflows
+  NFR-10: Accessible: keyboard navigable forms, focus rings
+
+
+================================================================================
+13. FUTURE CONSIDERATIONS (POST-V3)
+================================================================================
+
+  - Migrate localStorage data to Supabase for multi-device sync
+  - Shared household budgets (multiple users, same budget)
+  - Custom categories (add/rename/reorder)
+  - Recurring transactions (auto-populate actuals)
+  - Bank CSV import integration (connect v1 upload pipeline)
+  - Budget vs actual charts with Recharts
+  - Export budget as PDF report
+  - Push notifications for over-budget alerts
+  - Template sharing between users
+  - Historical template versioning
+
+
+================================================================================
+14. FILE STRUCTURE (V3 MODULE)
+================================================================================
+
+  src/app/v3/
+  ├── layout.tsx              # Sidebar, top bar, dark mode, nav (5 items)
+  ├── page.tsx                # Dashboard (donut, balance, recent txns)
+  ├── budget/
+  │   └── page.tsx            # Budget Planner (incomes, templates, table)
+  ├── transactions/
+  │   └── page.tsx            # Manual transaction entry & review
+  ├── review/
+  │   └── page.tsx            # Monthly review (grade, wins, alerts, archive)
+  ├── history/
+  │   └── page.tsx            # Historical Trends (charts, vault, trends)
+  └── lib/
+      └── store.ts            # useV3Store hook, types, localStorage logic
+
+
+================================================================================
+15. CHANGELOG
+================================================================================
+
+  2026-03-22  v3.2  Historical Trends page (/v3/history) with:
+                    - Monthly archive system (auto-snapshot on Finish Review)
+                    - Income vs Spending bar chart (6-month)
+                    - Historical comparison table (3-month side-by-side)
+                    - Category-by-category 6-month history table
+                    - Trending categories with month-over-month % change
+                    - Collaborative Vault (shared notes between partners)
+                    - Average savings rate ring chart
+                    - Recent history log timeline
+                    - Year/month timeline selector
+
+  2026-03-22  v3.1  Multi-income sources, budget templates, redesigned
+                    budget planner page with bento layout, allocation
+                    health, inline editing, template save/load dialogs.
+
+  2026-03-XX  v3.0  Initial v3 MVP with Stitch design system. Single
+                    income, 10 categories, manual transactions, monthly
+                    review with grading.

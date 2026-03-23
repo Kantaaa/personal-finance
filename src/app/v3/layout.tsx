@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { seedDemoData, clearDemoData } from "@/app/v3/lib/seed";
 
 const NAV_ITEMS = [
   { href: "/v3", label: "Dashboard", icon: "dashboard", mobileLabel: "Home" },
   { href: "/v3/budget", label: "Budget Planner", icon: "payments", mobileLabel: "Budget" },
   { href: "/v3/transactions", label: "Transactions", icon: "upload_file", mobileLabel: "Trans" },
   { href: "/v3/review", label: "Monthly Review", icon: "group", mobileLabel: "Review" },
+  { href: "/v3/history", label: "Historical Trends", icon: "inventory_2", mobileLabel: "History" },
 ];
 
 const DARK_KEY = "pf-v3-dark";
 
 export default function V3Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -154,6 +157,27 @@ export default function V3Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="mt-auto space-y-1 pt-4" style={{ borderTop: "1px solid var(--v3-border)" }}>
+            {/* Demo data controls */}
+            <div className="flex gap-1 px-2 mb-2">
+              <button
+                onClick={() => { seedDemoData(); router.refresh(); window.location.reload(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition-colors"
+                style={{ backgroundColor: "var(--v3-surface-high)", color: "var(--v3-primary)" }}
+                title="Load demo data"
+              >
+                <span className="material-symbols-outlined text-[14px]">science</span>
+                Load Demo
+              </button>
+              <button
+                onClick={() => { clearDemoData(); router.refresh(); window.location.reload(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition-colors"
+                style={{ backgroundColor: "var(--v3-surface-high)", color: "var(--v3-red)" }}
+                title="Clear all data"
+              >
+                <span className="material-symbols-outlined text-[14px]">delete_sweep</span>
+                Clear All
+              </button>
+            </div>
             <Link
               href="/v3"
               className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 font-medium"
