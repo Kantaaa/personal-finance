@@ -38,7 +38,7 @@ function AddNoteDialog({
 
   useEffect(() => {
     if (open) {
-      setAuthor("");
+      setAuthor(""); // eslint-disable-line react-hooks/set-state-in-effect -- reset form
       setText("");
       setTimeout(() => inputRef.current?.focus(), 50);
     }

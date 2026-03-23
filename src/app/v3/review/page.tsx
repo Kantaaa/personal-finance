@@ -26,12 +26,12 @@ function gradeColor(letter: string): string {
 const NOTES_KEY = "pf-v3-notes";
 
 export default function ReviewPage() {
-  const { data, loaded, totals, effectiveBudgets, archiveAndReset } = useV3Store();
+  const { loaded, totals, effectiveBudgets, archiveAndReset } = useV3Store();
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem(NOTES_KEY);
-    if (saved) setNotes(saved);
+    if (saved) setNotes(saved); // eslint-disable-line react-hooks/set-state-in-effect -- hydration-safe
   }, []);
 
   useEffect(() => {

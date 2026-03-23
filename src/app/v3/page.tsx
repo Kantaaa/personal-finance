@@ -7,6 +7,17 @@ import {
   computeTrends, detectRecurring, getTopMerchants, getDailySpending, findUnusualSpending,
 } from "@/app/v3/lib/store";
 
+function TrendBadge({ value, suffix = "%" }: { value: number; suffix?: string }) {
+  const isPositive = value > 0;
+  const isNegative = value < 0;
+  return (
+    <div className="flex items-center gap-1 text-xs font-semibold mt-2" style={{ color: isNegative ? "var(--v3-green)" : isPositive ? "var(--v3-red)" : "var(--v3-outline)" }}>
+      {value !== 0 && <span className="material-symbols-outlined text-sm">{isPositive ? "trending_up" : "trending_down"}</span>}
+      {value !== 0 ? `${isPositive ? "+" : ""}${value.toFixed(1)}${suffix}` : "No change"} vs last month
+    </div>
+  );
+}
+
 const CATEGORY_COLORS = [
   "#005050", "#006a6a", "#005315", "#2a7a5b", "#3e8e7e",
   "#4a9e8e", "#5bae9e", "#6cc0ae", "#7dd2be", "#8ee4ce",
@@ -37,8 +48,8 @@ function SpendingVelocityChart({
   });
 
   // Baseline (linear from 0 to budget target)
-  const baseStart = `${PX},${H + PY}`;
-  const baseEnd = `${PX + W},${H + PY - (budgetTarget / maxY) * H}`;
+  void `${PX},${H + PY}`;
+  void `${PX + W},${H + PY - (budgetTarget / maxY) * H}`;
 
   // Current day marker
   const today = new Date();
@@ -176,17 +187,6 @@ export default function V3DashboardPage() {
     const length = (totalForDonut > 0 ? cat.actual / totalForDonut : 0) * circumference;
     donutSegments.push({ offset: cumulativeOffset, length, color: cat.color });
     cumulativeOffset += length;
-  }
-
-  function TrendBadge({ value, suffix = "%" }: { value: number; suffix?: string }) {
-    const isPositive = value > 0;
-    const isNegative = value < 0;
-    return (
-      <div className="flex items-center gap-1 text-xs font-semibold mt-2" style={{ color: isNegative ? "var(--v3-green)" : isPositive ? "var(--v3-red)" : "var(--v3-outline)" }}>
-        {value !== 0 && <span className="material-symbols-outlined text-sm">{isPositive ? "trending_up" : "trending_down"}</span>}
-        {value !== 0 ? `${isPositive ? "+" : ""}${value.toFixed(1)}${suffix}` : "No change"} vs last month
-      </div>
-    );
   }
 
   return (

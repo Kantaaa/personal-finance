@@ -199,12 +199,14 @@ export function useV3Store() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- hydration-safe localStorage init */
     setData(loadData());
     setTemplates(loadTemplates());
     setHistory(loadHistory());
     setVaultNotes(loadVaultNotes());
     setCustomRules(loadCustomRules());
     setLoaded(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {

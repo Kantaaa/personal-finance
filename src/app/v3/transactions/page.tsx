@@ -1020,7 +1020,7 @@ function SuggestionCard({
   onConfirm: () => void;
   onChangeCategory: (cat: CategoryName) => void;
 }) {
-  const cat = categoryMap[tx.category];
+  void categoryMap[tx.category];
   return (
     <div className="p-6 rounded-xl" style={{ backgroundColor: "var(--v3-surface-low)", border: "1px solid color-mix(in srgb, var(--v3-secondary) 10%, transparent)" }}>
       <div className="flex items-center justify-between mb-2">

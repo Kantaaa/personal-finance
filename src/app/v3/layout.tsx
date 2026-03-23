@@ -22,7 +22,7 @@ export default function V3Layout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- hydration-safe init
     setDark(localStorage.getItem(DARK_KEY) === "true");
   }, []);
 

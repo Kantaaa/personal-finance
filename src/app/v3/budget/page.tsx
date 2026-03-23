@@ -5,31 +5,6 @@ import { useV3Store, formatNOK, CATEGORIES } from "@/app/v3/lib/store";
 
 /* ── Shared Sub-components ─────────────────────────────────── */
 
-function ProgressBar({ pct }: { pct: number }) {
-  const clamped = Math.min(pct, 100);
-  const color =
-    pct > 100 ? "#ba1a1a" : pct >= 80 ? "#b5890a" : "#005315";
-  const bgColor =
-    pct > 100 ? "#ffdad6" : pct >= 80 ? "#fff3cd" : "#7edb7e33";
-
-  return (
-    <div className="flex items-center gap-2 min-w-[120px]">
-      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: bgColor }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${clamped}%`, backgroundColor: color }}
-        />
-      </div>
-      <span
-        className="text-xs font-semibold tabular-nums w-10 text-right"
-        style={{ color }}
-      >
-        {Math.round(pct)}%
-      </span>
-    </div>
-  );
-}
-
 function InlineNumberInput({
   value,
   onChange,
@@ -142,6 +117,7 @@ function IncomeDialog({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form when dialog opens
       setLabel(initial?.label ?? "");
       setAmount(initial?.amount ? String(initial.amount) : "");
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -246,7 +222,7 @@ function SaveTemplateDialog({
 
   useEffect(() => {
     if (open) {
-      setName("");
+      setName(""); // eslint-disable-line react-hooks/set-state-in-effect -- reset form
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
